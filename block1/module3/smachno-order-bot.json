@@ -1,0 +1,302 @@
+{
+  "name": "smachno-order-bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -176,
+        16
+      ],
+      "id": "1331c278-2e90-48c4-a6a7-23087905a70b",
+      "name": "Telegram Trigger",
+      "webhookId": "67819f0c-f36b-4a67-a953-85afed3be8e4",
+      "credentials": {
+        "telegramApi": {
+          "id": "W5mXEvKo4NKBUMWd",
+          "name": "Smachno Order Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "8f44b2d1-dea7-4271-b0a7-f2335d2a8661"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "88017bec-7ee7-4445-98c2-3551fef64088",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/help",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "help"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        32,
+        0
+      ],
+      "id": "43d7fa6c-a033-498a-995e-ce610bcf2470",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Вітаємо вас в сервісі \"Смачно\"",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        -256
+      ],
+      "id": "2d389c0b-26fa-4daf-b963-646508765f73",
+      "name": "Send a text message",
+      "webhookId": "5ad7a35e-4710-4978-bb0c-28b6aaa237a2",
+      "credentials": {
+        "telegramApi": {
+          "id": "W5mXEvKo4NKBUMWd",
+          "name": "Smachno Order Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Для замовлення їжі, ви можете написати, що саме ви хочете замовити і куди доставити",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        -48
+      ],
+      "id": "f0c516c4-c867-4226-a7f7-e74dda298a0a",
+      "name": "Send a text message1",
+      "webhookId": "287c3a9d-58cd-47c7-aee0-4ecbe85fb3e5",
+      "credentials": {
+        "telegramApi": {
+          "id": "W5mXEvKo4NKBUMWd",
+          "name": "Smachno Order Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# РОЛЬ\nТи — бот прийому замовлень ресторану «Смачно». Ти спілкуєшся з клієнтом у чаті й збираєш дві обов'язкові речі:\n1) ЩО клієнт замовляє (страви);\n2) АДРЕСУ доставки.\n\n# ГОЛОВНЕ ПРАВИЛО\nПеред кожною відповіддю переглядай ВСЮ історію розмови, а не лише останнє повідомлення.\nКлієнт міг назвати страви кілька повідомлень тому, а адресу вказати щойно — або навпаки.\nСпочатку визнач із усієї переписки:\n- СТРАВИ: що вже названо? (так / ні)\n- АДРЕСА: чи вказано куди доставити? (так / ні)\nІ лише після цього обирай сценарій.\n\n# СЦЕНАРІЇ\n\n## Сценарій 1 — є і страви, і адреса\nПідтверди замовлення: перелічи всі названі страви, назви адресу доставки і попроси клієнта підтвердити.\nПриклад: «Записала: піца \"Маргарита\" і салат \"Цезар\" на вул. Шевченка, 12. Все вірно?»\n\n## Сценарій 2 — немає страв\nЗапитай, що клієнт бажає замовити.\nПро адресу в цьому випадку НЕ питай — навіть якщо адреси теж немає. Одне питання за раз.\n\n## Сценарій 3 — є страви, але немає адреси\nЗапитай, куди доставити замовлення.\nПро страви НЕ перепитуй — вони вже названі в історії розмови.\n\n# НЕРЕЛЕВАНТНЕ ПОВІДОМЛЕННЯ\nЯкщо клієнт пише не по темі (жарти, сторонні питання, загальні розмови) — коротко й доброзичливо поверни розмову до замовлення, не вступаючи в обговорення.\nПриклад: «Я приймаю замовлення в \"Смачно\" 🙂 Що б ви хотіли замовити?»\n\n# ЗАБОРОНЕНО\n- Вигадувати або додавати страви, яких клієнт не називав.\n- Пропонувати чи «згадувати» позиції меню, яких не було в розмові.\n- Самостійно підставляти, вгадувати чи доповнювати адресу доставки.\n- Вважати замовлення підтвердженим, доки клієнт явно не підтвердив.\nЯкщо чогось немає в історії розмови — цього немає. Питай, а не додумуй.\n\n# ФОРМАТ ВІДПОВІДІ\n- Тільки українською мовою.\n- Дружній, теплий тон, звертання на «ви».\n- Максимум 2–3 речення.\n- Без списків, заголовків і зайвих пояснень — просто жива репліка в чаті.\n\n## ТЕКСТ ПОВІДОМЛЕННЯ КОРИСТУВАЧА\n\n{{ $json.message.text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        272,
+        160
+      ],
+      "id": "ceb5fc02-e967-4072-8a55-8d8b961b20c2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        224,
+        384
+      ],
+      "id": "83ffc555-9817-4122-940c-0927a6742215",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "1iIG0S0zP3hqdJja",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Switch').item.json.message.chat.id }}",
+        "contextWindowLength": 6
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        400,
+        400
+      ],
+      "id": "dc722951-b604-4e45-a9a7-212dfcc06e8b",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        160
+      ],
+      "id": "293c45fb-bdaa-4e88-aae3-ba15d88f92a0",
+      "name": "Send a text message2",
+      "webhookId": "1e129d38-72fc-4144-ba78-eee6bd55b17c",
+      "credentials": {
+        "telegramApi": {
+          "id": "W5mXEvKo4NKBUMWd",
+          "name": "Smachno Order Bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a87ce778-05f6-4bf4-890d-77953654d86f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8e6cd51e52a2411f98b8f421c6fb0be5a02120baf5af56cd038b14a610bb04e6"
+  },
+  "nodeGroups": [],
+  "id": "pMfn6c9vjKeAuGoI",
+  "tags": []
+}

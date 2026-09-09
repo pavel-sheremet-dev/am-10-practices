@@ -1,0 +1,434 @@
+{
+  "name": "user-feedback-handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        -144
+      ],
+      "id": "b4b0880e-19cf-4647-b209-1617eb379028",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ba9418cf-ff46-4477-957d-d7c519a3681c",
+              "name": "ticket",
+              "value": "Замовив о 18:30, зараз 20:15, статус досі «готується». Де їжа?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -336,
+        -144
+      ],
+      "id": "8678c031-1c19-429a-ad15-231a4f7f3009",
+      "name": "Create Ticket"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"nvidia/nemotron-3-super-120b-a12b:free\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Ти — оператор першої лінії підтримки сервісу доставки їжі «Смачно».\\nЩодня ми отримуємо близько 300 звернень у чаті та на пошті, які потрібно\\nрозподілити і направити до різних підрозділів підтримки.\\n\\nКласифікуй звернення клієнта.\\n\\nПоверни ТІЛЬКИ валідний JSON. Без жодного тексту до або після. Без markdown-обгортки.\\n\\nСтруктура:\\n{\\n  \\\"topic\\\": \\\"...\\\",\\n  \\\"priority\\\": \\\"...\\\",\\n  \\\"needs_human\\\": ...,\\n  \\\"summary\\\": \\\"...\\\"\\n}\\n\\nДопустимі значення:\\n- topic: рівно одне з \\\"замовлення\\\", \\\"оплата\\\", \\\"якість їжі\\\", \\\"доставка\\\", \\\"інше\\\"\\n- priority: рівно одне з \\\"низький\\\", \\\"середній\\\", \\\"високий\\\"\\n- needs_human: тільки true або false\\n- summary: один рядок, максимум 15 слів\\n\\nПриклади:\\n\\nЗвернення: \\\"З картки списалось двічі за одне замовлення, 480 грн. Поверніть гроші!\\\"\\n{\\\"topic\\\":\\\"оплата\\\",\\\"priority\\\":\\\"високий\\\",\\\"needs_human\\\":true,\\\"summary\\\":\\\"Подвійне списання 480 грн, клієнт вимагає повернення\\\"}\\n\\nЗвернення: \\\"Доброго дня, а ви працюєте в неділю?\\\"\\n{\\\"topic\\\":\\\"інше\\\",\\\"priority\\\":\\\"низький\\\",\\\"needs_human\\\":false,\\\"summary\\\":\\\"Питання про графік роботи\\\"}\\n\\nЗвернення: \\\"Дуже смачно, дякую! До речі, промокод на наступне замовлення не спрацював.\\\"\\n{\\\"topic\\\":\\\"оплата\\\",\\\"priority\\\":\\\"середній\\\",\\\"needs_human\\\":false,\\\"summary\\\":\\\"Промокод не спрацював, відгук загалом позитивний\\\"}\\n\\nЗвернення: \\\"Привіт\\\"\\n{\\\"topic\\\":\\\"інше\\\",\\\"priority\\\":\\\"низький\\\",\\\"needs_human\\\":false,\\\"summary\\\":\\\"Звернення без змісту, потрібне уточнення\\\"}\\n\\nТепер класифікуй:\\nЗвернення: {{ $json.ticket }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -16,
+        -432
+      ],
+      "id": "0782dd09-522f-414f-88e1-bf7f6f575101",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "hyHvXRnS3Xlqa1v2",
+          "name": "OpenRouter practice-3"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.topic }}",
+                    "rightValue": "замовлення",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "276f978a-94f6-41f7-b532-67137a1e037d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "замовлення"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4b18f45c-8aec-4458-a161-731ce07243fe",
+                    "leftValue": "={{ $json.topic }}",
+                    "rightValue": "оплата",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "оплата"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b35e6cca-0d21-48e6-b41e-7d6d3896190e",
+                    "leftValue": "={{ $json.topic }}",
+                    "rightValue": "якість їжі",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "якість їжі"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3fe72a93-2367-4157-b3bf-996fd0b9b8a5",
+                    "leftValue": "={{ $json.topic }}",
+                    "rightValue": "доставка",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "доставка"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9beeeb50-fd35-450e-b867-52d6544147a5",
+                    "leftValue": "={{ $json.topic }}",
+                    "rightValue": "інше",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "інше"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -192
+      ],
+      "id": "a7f74764-9eba-4986-9e87-b810a6d67f24",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ти — оператор першої лінії підтримки сервісу доставки їжі «Смачно».\nЩодня ми отримуємо близько 300 звернень у чаті та на пошті, які потрібно\nрозподілити і направити до різних підрозділів підтримки.\n\nКласифікуй звернення клієнта.\n\nПоверни ТІЛЬКИ валідний JSON. Без жодного тексту до або після. Без markdown-обгортки.\n\nСтруктура:\n{\n  \"topic\": \"...\",\n  \"priority\": \"...\",\n  \"needs_human\": ...,\n  \"summary\": \"...\"\n}\n\nДопустимі значення:\n- topic: рівно одне з \"замовлення\", \"оплата\", \"якість їжі\", \"доставка\", \"інше\"\n- priority: рівно одне з \"низький\", \"середній\", \"високий\"\n- needs_human: тільки true або false\n- summary: один рядок, максимум 15 слів\n\nПриклади:\n\nЗвернення: \"З картки списалось двічі за одне замовлення, 480 грн. Поверніть гроші!\"\n{\"topic\":\"оплата\",\"priority\":\"високий\",\"needs_human\":true,\"summary\":\"Подвійне списання 480 грн, клієнт вимагає повернення\"}\n\nЗвернення: \"Доброго дня, а ви працюєте в неділю?\"\n{\"topic\":\"інше\",\"priority\":\"низький\",\"needs_human\":false,\"summary\":\"Питання про графік роботи\"}\n\nЗвернення: \"Дуже смачно, дякую! До речі, промокод на наступне замовлення не спрацював.\"\n{\"topic\":\"оплата\",\"priority\":\"середній\",\"needs_human\":false,\"summary\":\"Промокод не спрацював, відгук загалом позитивний\"}\n\nЗвернення: \"Привіт\"\n{\"topic\":\"інше\",\"priority\":\"низький\",\"needs_human\":false,\"summary\":\"Звернення без змісту, потрібне уточнення\"}\n\nТепер класифікуй:\nЗвернення: {{ $json.ticket }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -48,
+        -144
+      ],
+      "id": "6f56c34a-d15d-425e-9d5a-7ecff04bde67",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        64
+      ],
+      "id": "929775ef-69b1-47bc-ba0d-f5074149ad09",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "1iIG0S0zP3hqdJja",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nfor (const item of $input.all()) {\n  return JSON.parse(item.json.text)\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        -144
+      ],
+      "id": "e0e2caa3-23c2-4cec-b7bf-f2348e39e787",
+      "name": "Parse to JSON"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b9466d9a-d545-4761-94db-afa98a68ec5b",
+              "name": "departament",
+              "value": "Відділ замовлення",
+              "type": "string"
+            },
+            {
+              "id": "40a931b4-40e9-4e3a-9380-60cedda4d281",
+              "name": "priority",
+              "value": "={{ $('Parse to JSON').item.json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "a701b352-7580-4153-83ab-346ed09fc7ed",
+              "name": "needs_human",
+              "value": "={{ $('Parse to JSON').item.json.needs_human }}",
+              "type": "boolean"
+            },
+            {
+              "id": "d73ca300-2cff-4a08-b46d-5c0c3af16cef",
+              "name": "summary",
+              "value": "={{ $('Parse to JSON').item.json.summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        864,
+        -400
+      ],
+      "id": "a1123fb3-379f-4543-a449-26be4051c8f8",
+      "name": "Form Data for Order Department"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a408b046-846f-4df2-9de0-fc4082220ab6",
+              "name": "departament",
+              "value": "Відділ доставки",
+              "type": "string"
+            },
+            {
+              "id": "12384cbe-57b2-4fd8-8706-a4afeab33566",
+              "name": "priority",
+              "value": "={{ $json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "1c3ac12d-5ad6-4eb9-9e45-dd79046989ba",
+              "name": "needs_human",
+              "value": "={{ $json.needs_human }}",
+              "type": "boolean"
+            },
+            {
+              "id": "f028a0d8-6c92-430c-a355-0b03e3c6c718",
+              "name": "summary",
+              "value": "={{ $json.summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        880,
+        112
+      ],
+      "id": "4503cfee-0926-4808-a26f-e2178441f26e",
+      "name": "Form Data for Delivery Department"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Create Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Ticket": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Form Data for Order Department",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [
+          {
+            "node": "Form Data for Delivery Department",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse to JSON": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Data for Order Department": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c9dcee6d-1e28-45ba-80f6-d3d6716e7822",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8e6cd51e52a2411f98b8f421c6fb0be5a02120baf5af56cd038b14a610bb04e6"
+  },
+  "nodeGroups": [],
+  "id": "PxzhUqb72oOj5Oss",
+  "tags": []
+}
