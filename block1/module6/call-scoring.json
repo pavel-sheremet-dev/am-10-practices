@@ -1,0 +1,754 @@
+{
+  "name": "call-scoring",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "unit": "minutes"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1BVdUEyIHefcQiS9QPVevX4XwTsD-OEUc",
+          "mode": "id"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        -96
+      ],
+      "id": "7a9fbb10-d824-4a03-8b2e-0075e2c00a67",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "6hPFK7dbjD0qJR4k",
+          "name": "Google Drive temp.acc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1a7a546-d4ab-4e7d-9d13-7afe2041e8b1",
+              "name": "mimeType",
+              "value": "={{ $json.mimeType }}",
+              "type": "string"
+            },
+            {
+              "id": "cbdff2f5-7f39-4832-a287-7c29a4a8f126",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "e7d8e109-d332-4ff6-9ef3-f55608907f09",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "171e809e-ac5c-45cc-91cc-0d0cd8ff3bfa",
+              "name": "createdTime",
+              "value": "={{ $json.createdTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -80,
+        -96
+      ],
+      "id": "84d95360-0321-43ec-a733-092331b5ed67",
+      "name": "Normalize Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4207091a-0099-43e0-a225-b2eb0966be1e",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "audio",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        144,
+        -96
+      ],
+      "id": "e8b6999f-0c50-4a71-88ce-502734b7c116",
+      "name": "Is Audio File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/transcript",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"audio_url\": \"https://drive.google.com/uc?export=download&id={{ $json.id }}\",\n  \"speech_models\": [\"universal-2\"],\n  \"language_code\": \"uk\",\n  \"speaker_labels\": true,\n  \"speakers_expected\": 2,\n  \"speech_understanding\": {\n    \"request\": {\n      \"speaker_identification\": {\n    \"speaker_type\": \"role\",\n    \"speakers\": [\n      {\n        \"role\": \"Operator\",\n        \"description\": \"A customer support representative for the food delivery service «Смачно». Introduces the support service, asks for the order number, checks the delivery or payment status, explains delays, offers compensation, forwards inquiries to the appropriate department, and provides response timeframes.\"\n      },\n      {\n        \"role\": \"Customer\",\n        \"description\": \"A person contacting support about their own order. Reports a delivery delay or a duplicate charge, provides the order number and payment amount, and asks about delivery, refunds, and resolution timeframes.\"\n      }\n    ]\n  }\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        400,
+        -192
+      ],
+      "id": "beda74cb-289b-4744-b064-8ec0d355a114",
+      "name": "POST /v2/transcript",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3Q3QRftJebkEUSON",
+          "name": "AssemblyAI_n8n_test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.assemblyai.com/v2/transcript/{{ $('POST /v2/transcript').item.json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        864,
+        -192
+      ],
+      "id": "910bc77a-dcb9-4465-834c-2482ddcbc4ea",
+      "name": "GET v2/transcript/transcript_id",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "g5O66BsJHvyOzo14",
+          "name": "AssemblyAI KEY"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        -192
+      ],
+      "id": "4545471f-a99a-4b5d-b044-d5194ce02198",
+      "name": "Wait",
+      "webhookId": "5b4199bd-f899-4c70-a66c-05899c122e1b"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ed1c25c0-7bc5-406f-91fc-ff51485cfe12"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ERROR"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b51def38-6795-4edd-a98e-e6018150c4a3",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "COMPLETED"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        -208
+      ],
+      "id": "40230209-312b-43b7-978a-55550f56d7cc",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "85fd5220-e9d4-4824-a432-f88486257a17",
+              "name": "transcript",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "f1e5d785-2de6-4031-92ee-7a5ba03a3ed7",
+              "name": "audio_duration",
+              "value": "={{ $json.audio_duration }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1376,
+        -192
+      ],
+      "id": "e38cb6a3-34bb-4aa0-ae44-4f67e367ae1c",
+      "name": "Get Transcribe Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ти — керівник служби підтримки сервісу доставки їжі «Смачно». Оціни, як оператор провів телефонну розмову з клієнтом.\n\nТранскрипт — це суцільний текст без розмітки спікерів: репліки оператора й клієнта йдуть підряд, і ніде не позначено, хто що сказав. Тому працюй у два кроки: спочатку визнач, які слова належать оператору, а які — клієнту, потім оціни роботу оператора.\n\nКРОК 1. Визнач, хто що сказав\n\n- Спирайся на зміст і логіку діалогу, а не на пунктуацію. Розділові знаки розставлені автоматично й не позначають зміну спікера: вона може статися посеред речення, а одна репліка може складатися з кількох речень.\n  Приклад: «...уточніть, будь ласка, адресу доставки. Вулиця Шевченка, 12. Дякую, зараз перевірю.»\n  → оператор: «...уточніть, будь ласка, адресу доставки.»\n  → клієнт: «Вулиця Шевченка, 12.»\n  → оператор: «Дякую, зараз перевірю.»\n- Перша фраза не обов'язково належить оператору: клієнт може заговорити першим, а початок запису може бути обрізаний.\n- Ознаки оператора: вітається від імені «Смачно»; просить номер замовлення, телефон чи адресу; має доступ до системи («зараз подивлюся», «бачу в системі...»); пояснює статус, вибачається від імені сервісу, пропонує рішення чи компенсацію.\n- Ознаки клієнта: описує проблему, скаржиться, називає номер замовлення чи свої дані, реагує на запропоноване рішення.\n- Короткі репліки («Так», «Добре», «Дякую», «Добрий вечір») можуть належати будь-кому — визначай за тим, на що вони відповідають. Перевір себе: у розбитому діалозі на питання має йти відповідь, на пропозицію — реакція.\n- Допоміжна ознака — рід дієслів минулого часу («я замовляла» / «я перевірив»), якщо у спікерів він різний.\n- Автоматичні повідомлення (автовідповідач, «розмова може записуватися») не належать ні оператору, ні клієнту: не включай їх у dialogue і не зараховуй як привітання оператора.\n\nКРОК 2. Оціни роботу оператора\n\nОцінюй роботу ОПЕРАТОРА, а не клієнта: його репліки, реакцію на слова клієнта й результат розмови. Емоції чи грубість клієнта не знижують оцінку оператора.\n\nТранскрипт може містити помилки розпізнавання: імена, назви страв, промокоди й цифри часто спотворені. При оцінці не зважай на це.\n\nФОРМАТ ВІДПОВІДІ\n\nПоверни ТІЛЬКИ валідний JSON. Без жодного тексту до або після. Без markdown-обгортки.\nПоля — саме в такому порядку: спершу заповни dialogue, потім виставляй оцінки на його основі.\n\n{\n  \"dialogue\": [\n    {\"role\": \"...\", \"text\": \"...\"},\n    ...\n  ],\n  \"topic\": \"...\",\n  \"politeness\": \"...\",\n  \"greeting\": ...,\n  \"resolved\": ...,\n  \"score\": ...,\n  \"comment\": \"...\"\n}\n\nПравила для полів:\n- dialogue: репліки в порядку розмови. role — \"оператор\" або \"клієнт\"; text — дослівний фрагмент транскрипту, без переказу й виправлень. Сусідні фрагменти одного спікера об'єднуй в одну репліку. Разом репліки мають покрити весь текст, крім автоматичних повідомлень. Подвійні лапки всередині text заміни на «».\n- topic: основна причина звернення, рівно одне з:\n  - \"замовлення\" — оформлення, зміна, скасування, склад замовлення;\n  - \"оплата\" — списання коштів, повернення грошей, промокоди, знижки;\n  - \"якість їжі\" — смак, свіжість, температура, стан страв;\n  - \"доставка\" — затримка, кур'єр, час чи адреса доставки, навіть якщо клієнт формулює це як питання про замовлення;\n  - \"інше\" — усе, що не підходить під ці категорії.\n- politeness: рівно одне з:\n  - \"висока\" — доброзичливий тон, подяки, вибачення, емпатія;\n  - \"середня\" — коректно, але сухо й формально;\n  - \"низька\" — грубість, роздратування, зневага, звинувачення клієнта.\n- greeting: true, якщо оператор привітався і представився — назвав сервіс «Смачно» або своє ім'я; інакше false.\n- resolved: true, тільки якщо питання клієнта вирішене або запропоноване конкретне рішення. Якщо клієнта відправили розбиратись деінде — false. Якщо з розмови незрозуміло, чи питання вирішене, — теж false.\n- score: ціле число від 1 до 10:\n  - 9–10 — зразкова розмова: привітався, швидко з'ясував суть, запропонував конкретне рішення, ввічливий та емпатичний;\n  - 6–8 — питання вирішене, але є недоліки: немає привітання, сухий тон, неповні пояснення;\n  - 3–5 — питання не вирішене чи вирішене частково, хоча оператор був коректним;\n  - 1–2 — грубість, байдужість до проблеми, відмова допомогти.\n- comment: один рядок, максимум 20 слів, тільки про роботу оператора.\n\n<transcript>\n{{ $json.transcript }}\n</transcript>",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1600,
+        -192
+      ],
+      "id": "a8dad71a-d573-425e-9316-f310b978872b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.6-terra",
+          "mode": "list",
+          "cachedResultName": "gpt-5.6-terra"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1472,
+        16
+      ],
+      "id": "528ff9ed-8c0c-4f2f-ae63-eb99141a1350",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8DpmS6cMzxelGOCb",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"operator_speaker\": \"string\",\n  \"topic\": \"string\",\n  \"politeness\": \"string\",\n  \"greeting\": true,\n  \"resolved\": true,\n  \"score\": 5,\n  \"comment\": \"string\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1776,
+        16
+      ],
+      "id": "1351ed69-adae-4616-9adc-c79a39c9c556",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12_yrdIQVykNeSKl12Q6QQn0s_wx2zw1biwnUDwpE8nk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 772601425,
+          "mode": "list",
+          "cachedResultName": "Статистика",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12_yrdIQVykNeSKl12Q6QQn0s_wx2zw1biwnUDwpE8nk/edit#gid=772601425"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Дата": "={{ $('Normalize Data').item.json.createdTime }}",
+            "Файл": "={{ $('Normalize Data').item.json.name }}",
+            "Тривалість, с": "={{ $('Get Transcribe Data').item.json.audio_duration }}",
+            "Тема": "={{ $json.output.topic }}",
+            "Ввічливість": "={{ $json.output.politeness }}",
+            "Привітався": "={{ $json.output.greeting }}",
+            "Питання вирішене": "={{ $json.output.resolved }}",
+            "Оцінка": "={{ $json.output.score }}",
+            "Коментар": "={{ $json.output.comment }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Дата",
+              "displayName": "Дата",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Файл",
+              "displayName": "Файл",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Тривалість, с",
+              "displayName": "Тривалість, с",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Тема",
+              "displayName": "Тема",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ввічливість",
+              "displayName": "Ввічливість",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Привітався",
+              "displayName": "Привітався",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Питання вирішене",
+              "displayName": "Питання вирішене",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Оцінка",
+              "displayName": "Оцінка",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Коментар",
+              "displayName": "Коментар",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1968,
+        -192
+      ],
+      "id": "abd379f2-750a-450b-abae-42b689401d92",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5BcvYUVZvBbgbwCI",
+          "name": "Google Sheets account temp.acc"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Google Drive Trigger": [
+      {
+        "json": {
+          "kind": "drive#file",
+          "fileExtension": "wav",
+          "copyRequiresWriterPermission": false,
+          "md5Checksum": "0e88e0908aa24df25bd39358e1b8e75c",
+          "writersCanShare": true,
+          "viewedByMe": true,
+          "mimeType": "audio/wav",
+          "parents": [
+            "1BVdUEyIHefcQiS9QPVevX4XwTsD-OEUc"
+          ],
+          "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/audio/wav",
+          "shared": true,
+          "lastModifyingUser": {
+            "displayName": "temp acc",
+            "kind": "drive#user",
+            "me": true,
+            "permissionId": "17990978420136271972",
+            "emailAddress": "temp.acc.diagnostic@gmail.com",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJpaDS7kJwReCRcJV5iqoYHhPWvLGzo3QB3JTIWEEOoZ2VA=s64"
+          },
+          "owners": [
+            {
+              "displayName": "temp acc",
+              "kind": "drive#user",
+              "me": true,
+              "permissionId": "17990978420136271972",
+              "emailAddress": "temp.acc.diagnostic@gmail.com",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJpaDS7kJwReCRcJV5iqoYHhPWvLGzo3QB3JTIWEEOoZ2VA=s64"
+            }
+          ],
+          "headRevisionId": "0B4XXVO6RIkLWWHF3MjdEdU1FU1V0L2I3NDNabTErK2ordTNZPQ",
+          "webViewLink": "https://drive.google.com/file/d/1MnOzP-c8sLyFCG1xY2ziCEUtn7lbx-vp/view?usp=drivesdk",
+          "webContentLink": "https://drive.google.com/uc?id=1MnOzP-c8sLyFCG1xY2ziCEUtn7lbx-vp&export=download",
+          "size": "2234444",
+          "viewersCanCopyContent": true,
+          "permissions": [
+            {
+              "id": "anyoneWithLink",
+              "type": "anyone",
+              "kind": "drive#permission",
+              "role": "reader",
+              "allowFileDiscovery": false
+            },
+            {
+              "id": "17990978420136271972",
+              "displayName": "temp acc",
+              "type": "user",
+              "kind": "drive#permission",
+              "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJpaDS7kJwReCRcJV5iqoYHhPWvLGzo3QB3JTIWEEOoZ2VA=s64",
+              "emailAddress": "temp.acc.diagnostic@gmail.com",
+              "role": "owner",
+              "deleted": false,
+              "pendingOwner": false
+            }
+          ],
+          "hasThumbnail": false,
+          "spaces": [
+            "drive"
+          ],
+          "id": "1MnOzP-c8sLyFCG1xY2ziCEUtn7lbx-vp",
+          "name": "call_01.wav",
+          "starred": false,
+          "trashed": false,
+          "explicitlyTrashed": false,
+          "createdTime": "2026-09-30T17:10:16.222Z",
+          "modifiedTime": "2026-09-25T08:34:15.915Z",
+          "modifiedByMeTime": "2026-09-25T08:34:15.915Z",
+          "viewedByMeTime": "2026-09-30T17:10:16.222Z",
+          "quotaBytesUsed": "2234444",
+          "version": "6",
+          "originalFilename": "call_01.wav",
+          "ownedByMe": true,
+          "fullFileExtension": "wav",
+          "isAppAuthorized": false,
+          "capabilities": {
+            "canChangeViewersCanCopyContent": true,
+            "canEdit": true,
+            "canCopy": true,
+            "canComment": true,
+            "canAddChildren": false,
+            "canDelete": true,
+            "canDownload": true,
+            "canListChildren": false,
+            "canRemoveChildren": false,
+            "canRename": true,
+            "canTrash": true,
+            "canReadRevisions": true,
+            "canChangeCopyRequiresWriterPermission": true,
+            "canMoveItemIntoTeamDrive": true,
+            "canUntrash": true,
+            "canModifyContent": true,
+            "canMoveItemOutOfDrive": true,
+            "canAddMyDriveParent": false,
+            "canRemoveMyDriveParent": true,
+            "canMoveItemWithinDrive": true,
+            "canShare": true,
+            "canMoveChildrenWithinDrive": false,
+            "canModifyContentRestriction": true,
+            "canChangeSecurityUpdateEnabled": false,
+            "canAcceptOwnership": false,
+            "canReadLabels": false,
+            "canModifyLabels": false,
+            "canModifyEditorContentRestriction": true,
+            "canModifyOwnerContentRestriction": true,
+            "canRemoveContentRestriction": false,
+            "canDisableInheritedPermissions": false,
+            "canEnableInheritedPermissions": true,
+            "canChangeItemDownloadRestriction": true,
+            "canStartApproval": false,
+            "canAccessViaGenAi": true
+          },
+          "thumbnailVersion": "0",
+          "modifiedByMe": true,
+          "permissionIds": [
+            "anyoneWithLink",
+            "17990978420136271972"
+          ],
+          "linkShareMetadata": {
+            "securityUpdateEligible": false,
+            "securityUpdateEnabled": true
+          },
+          "sha1Checksum": "a920eed2298db7a8e034076fcb98ad98bf03d107",
+          "sha256Checksum": "29a2e3f916cb2e5f97cbf650f528cb4b3e698a17b7df3612232a99863bb65474",
+          "inheritedPermissionsDisabled": false,
+          "downloadRestrictions": {
+            "itemDownloadRestriction": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            },
+            "effectiveDownloadRestrictionWithContext": {
+              "restrictedForReaders": false,
+              "restrictedForWriters": false
+            }
+          },
+          "clientEncryptionDetails": {
+            "decryptionMetadata": {
+              "wrappedKey": "",
+              "kaclsId": "0",
+              "aes256GcmChunkSize": "unset",
+              "keyFormat": "unsetKeyFormat",
+              "encryptionResourceKeyHash": ""
+            }
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Data": {
+      "main": [
+        [
+          {
+            "node": "Is Audio File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Audio File": {
+      "main": [
+        [
+          {
+            "node": "POST /v2/transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /v2/transcript": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "GET v2/transcript/transcript_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET v2/transcript/transcript_id": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Transcribe Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Transcribe Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "22cd4dfd-bb62-44e6-b1f1-04a454c738ff",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7b51a97726ffa6e9334a351d77933a628b59aac482273d952995289707e7bb9d"
+  },
+  "nodeGroups": [],
+  "id": "1w5BajFtkgPvjjgV",
+  "tags": []
+}
